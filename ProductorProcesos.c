@@ -1,34 +1,17 @@
-#include <stdio.h>
-#include <stdlib.h>
+// #include <stdio.h>
+// #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+// #include <sys/ipc.h>
+// #include <sys/shm.h>
 #include <time.h>
 #include <semaphore.h>
 #include <string.h>
 
-#include "./heads/worstFit.h"
-
-#define MEM_SIZE 1024 // Tamaño de la memoria compartida en bytes
-#define MIN_SIZE 1     // Tamaño mínimo de un hilo en líneas
-#define MAX_SIZE 10    // Tamaño máximo de un hilo en líneas
-#define MIN_SLEEP 20   // Tiempo de espera mínimo en segundos
-#define MAX_SLEEP 60   // Tiempo de espera máximo en segundos
-
-typedef struct {
-    int tid;
-    int size;
-    int sleep;
-} ThreadInfo;
-
-typedef struct {
-    int *memory;      // Puntero a la memoria compartida
-    int num_lines;    // Número de líneas de la memoria compartida
-    int algorithm;    // Algoritmo de asignación de memoria
-    pthread_mutex_t mutex; // Mutex para la exclusión mutua
-    sem_t *memory_sem; // Semáforo para gestionar el acceso a la memoria
-} ThreadArgs;
+#include "./heads/cons.h"
+#include "./heads/strucs.h"
+#include "./heads/memManagement.h"
+#include "./heads/algorithms/worstFit.h"
 
 void write_log(int tid, int action_type, int index, int size, int *memory) {
     printf("Escribiendo en la bitácora...\n");
@@ -96,32 +79,7 @@ void *threadFunction(void *args) {
     pthread_exit(NULL);
 }
 
-int main() {
-    srand(time(NULL));
-
-    key_t key = ftok("memoria_compartida", 65);
-    int shmid = shmget(key, MEM_SIZE, 0666);
-    if (shmid == -1) {
-        perror("shmget");
-        exit(EXIT_FAILURE);
-    }
-
-    // Adjuntar la memoria compartida
-    int *memory = (int *)shmat(shmid, NULL, 0);
-    // https://www.ibm.com/docs/es/zos/3.1.0?topic=functions-shmat-attach-shared-memory-segment
-    // sirve para adjuntar un segmento de memoria compartida a un proceso
-    if (memory == (void *)-1) { // (void *)-1 es el valor de retorno de shmat en caso de error
-        perror("shmat");
-        exit(EXIT_FAILURE);
-    }
-
-    // Inicializar el mutex para la exclusión mutua
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
-    // Crear e inicializar el semáforo de memoria
-    sem_t *memory_sem = (sem_t *)malloc(sizeof(sem_t));
-    sem_init(memory_sem, 0, 1); // Inicializar el semáforo con valor 1
-
+int chooseAlgorithm() {
     int algorithm_choice;
     printf("Seleccione el algoritmo de asignación de memoria:\n");
     printf("1. Worst-Fit\n");
@@ -134,21 +92,40 @@ int main() {
     if (algorithm_choice < 1 || algorithm_choice > 4) {
         printf("Opción no válida\n");
         exit(EXIT_FAILURE);
-    }
-
-    if(algorithm_choice == 4) {
+    } else if (algorithm_choice == 4) {
         printf("Saliendo...\n");
         exit(EXIT_SUCCESS);
     }
+    
+    return algorithm_choice;
+}
 
-    while (1) {
+int main() {
+    srand(time(NULL));
+    int* memory = getMemory("memoria_compartida", 65, MEM_SIZE, 0666);
+    
+    if (memory == (void *)-1) { // (void *)-1 es el valor de retorno de shmat en caso de error
+        perror("shmat");
+        exit(EXIT_FAILURE);
+    }
+
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    sem_t *memory_sem = (sem_t *)malloc(sizeof(sem_t));
+    sem_init(memory_sem, 0, 1); // Se inicializa el semáforo de memoria en 1
+    int algorithm = chooseAlgorithm();
+
+    int i;
+    i = 0;
+    while (i==0) {
+        i++;
         printf("Creando un nuevo hilo...\n");
         pthread_t thread;
         ThreadArgs thread_args;
         thread_args.memory = memory;
-        thread_args.num_lines = MEM_SIZE / sizeof(int);
-        // thread_args.num_lines = 25; // Número de líneas de memoria (aleatorio
-        thread_args.algorithm = algorithm_choice;
+        // thread_args.num_lines = MEM_SIZE / sizeof(int);
+        // Número de líneas de memoria (aleatorio)
+        thread_args.num_lines = (rand() % (MEM_SIZE / sizeof(int) - 1)) + 1;
+        thread_args.algorithm = algorithm;
         thread_args.mutex = mutex;
         thread_args.memory_sem = memory_sem;
         
@@ -156,11 +133,12 @@ int main() {
             perror("pthread_create");
             break;
         }
-        // int sleepTime = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
-        int sleepTime = 1;
-        printf("Esperando %d segundos para crear otro hilo...\n", sleepTime);
+        int sleepTime = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
+        // int sleepTime = 1;
+        // printf("Esperando %d segundos para crear otro hilo...\n", sleepTime);
         sleep(sleepTime);
     }
+    sleep(1000);
 
     // Desasociar la memoria compartida
     if (shmdt(memory) == -1) {

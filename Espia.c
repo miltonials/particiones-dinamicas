@@ -7,18 +7,11 @@
 #include <time.h>
 #include <semaphore.h>
 #include <string.h>
-
-#define MEM_SIZE 1024 // Tamaño de la memoria compartida en bytes
-
-// Estructura para representar el estado de un proceso
-typedef struct {
-    int pid;     // ID del proceso
-    int status;  // Estado del proceso: 0 -> bloqueado, 1 -> ejecutando, 2 -> accediendo a memoria
-} ProcessStatus;
-
-// Función para imprimir el estado de la memoria
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "./heads/cons.h"
+#include "./heads/strucs.h"
 
 char* print_memory_status(int *memory, int num_lines) {
     char* report = (char*)malloc(1024);
@@ -29,24 +22,13 @@ char* print_memory_status(int *memory, int num_lines) {
 
     printf("Estado de la memoria:\n");
     for (int i = 0; i < num_lines; i++) {
+        if(i == 100) {
+            break;
+        }
         if (memory[i] != 0) {
             printf("Línea %d: Ocupada por el proceso %d\n", i, memory[i]);
-            strcat(report, "Línea ");
-            char line[10];
-            sprintf(line, "%d", i);
-            strcat(report, line);
-            strcat(report, ": Ocupada por el proceso ");
-            char process[10];
-            sprintf(process, "%d", memory[i]);
-            strcat(report, process);
-            strcat(report, "\n");
         } else {
             printf("Línea %d: Libre\n", i);
-            strcat(report, "Línea ");
-            char line[10];
-            sprintf(line, "%d", i);
-            strcat(report, line);
-            strcat(report, ": Libre\n");
         }
     }
 
@@ -118,20 +100,7 @@ int main() {
             case 1:
                 while(1) {
                     // print_memory_status(memory, MEM_SIZE / sizeof(int));
-                    char *report = print_memory_status(memory, MEM_SIZE / sizeof(int));
-                    // guardar en Bitacora.txt
-                    FILE *bitacora = fopen("Bitacora.txt", "a");
-                    if (bitacora == NULL) {
-                        perror("fopen");
-                        exit(EXIT_FAILURE);
-                    }
-
-                    //vaciar el contenido de la bitacora
-                    fprintf(bitacora, "%s", "");
-                    fprintf(bitacora, "%s", report);
-                    fclose(bitacora);
-                    free(report);
-
+                    print_memory_status(memory, MEM_SIZE / sizeof(int));
                     sleep(1);
                 }
                 break;

@@ -4,7 +4,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-#define MEM_SIZE 1024 // Tamaño de la memoria compartida en bytes
+#include "./heads/cons.h"
 
 int main() {
     // Obtener la memoria compartida
