@@ -30,10 +30,7 @@ int main() {
     printf("Recursos liberados\n");
 
     // Matar todos los procesos en ejecución
-    // (Aquí iría la lógica para matar los procesos, pero no está implementada en este ejemplo)
-
-    // Cerrar el archivo de bitácora
-    // (Aquí iría la lógica para cerrar el archivo de bitácora, pero no está implementada en este ejemplo)
+    // ...
 
     return 0;
 }

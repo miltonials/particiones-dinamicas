@@ -6,6 +6,7 @@
 #include <sys/shm.h>
 #include <time.h>
 #include <semaphore.h>
+#include <string.h>
 
 #include "./heads/worstFit.h"
 
@@ -29,7 +30,7 @@ typedef struct {
     sem_t *memory_sem; // Semáforo para gestionar el acceso a la memoria
 } ThreadArgs;
 
-void write_log(int tid, int action_type, int index, int size) {
+void write_log(int tid, int action_type, int index, int size, int *memory) {
     printf("Escribiendo en la bitácora...\n");
 }
 
@@ -67,7 +68,7 @@ void *threadFunction(void *args) {
     }
 
     if (index != -1) {
-        write_log(tid, 1, index, size); // Escribir en Bitácora (asignación)
+        write_log(tid, 1, index, size, memory); // Escribir en Bitácora (asignación)
         printf("Hilo %d asignado a partir de la línea %d con tamaño %d\n", tid, index, size);
         // Asignar memoria para el hilo
         int i;
@@ -75,7 +76,7 @@ void *threadFunction(void *args) {
             memory[i] = tid;
         }
     } else {
-        write_log(tid, 0, -1, -1); // Escribir en Bitácora (no hay suficiente espacio)
+        write_log(tid, 0, -1, -1, memory); // Escribir en Bitácora (no hay suficiente espacio)
         printf("No hay suficiente espacio en la memoria para el hilo %d\n", tid);
     }
     pthread_mutex_unlock(mutex); // Desbloquear el mutex después de acceder a la memoria
@@ -90,7 +91,7 @@ void *threadFunction(void *args) {
         memory[i] = 0;
     }
     pthread_mutex_unlock(mutex);
-    write_log(tid, -1, index, size); // Escribir en Bitácora (liberación)
+    write_log(tid, -1, index, size, memory); // Escribir en Bitácora (liberación)
     sem_post(memory_sem); // Devolver semáforo de memoria
     pthread_exit(NULL);
 }
@@ -107,7 +108,9 @@ int main() {
 
     // Adjuntar la memoria compartida
     int *memory = (int *)shmat(shmid, NULL, 0);
-    if (memory == (void *)-1) {
+    // https://www.ibm.com/docs/es/zos/3.1.0?topic=functions-shmat-attach-shared-memory-segment
+    // sirve para adjuntar un segmento de memoria compartida a un proceso
+    if (memory == (void *)-1) { // (void *)-1 es el valor de retorno de shmat en caso de error
         perror("shmat");
         exit(EXIT_FAILURE);
     }
@@ -139,19 +142,24 @@ int main() {
     }
 
     while (1) {
+        printf("Creando un nuevo hilo...\n");
         pthread_t thread;
         ThreadArgs thread_args;
         thread_args.memory = memory;
         thread_args.num_lines = MEM_SIZE / sizeof(int);
+        // thread_args.num_lines = 25; // Número de líneas de memoria (aleatorio
         thread_args.algorithm = algorithm_choice;
         thread_args.mutex = mutex;
         thread_args.memory_sem = memory_sem;
+        
         if (pthread_create(&thread, NULL, threadFunction, (void *)&thread_args) != 0) {
             perror("pthread_create");
             break;
         }
-        
-        sleep((rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP);
+        // int sleepTime = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
+        int sleepTime = 1;
+        printf("Esperando %d segundos para crear otro hilo...\n", sleepTime);
+        sleep(sleepTime);
     }
 
     // Desasociar la memoria compartida
