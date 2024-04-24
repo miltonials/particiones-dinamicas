@@ -1,21 +1,39 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/mman.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-int main() {
-    // Solicitar memoria compartida al sistema operativo
-    int shmid = 40;
+#define MEM_SIZE 1024 // Tamaño de la memoria compartida en bytes
 
-    // Eliminar la memoria compartida
-    if (shmctl(shmid, IPC_RMID, NULL) == -1) {
-        perror("Error al eliminar memoria compartida");
+int main() {
+    // Obtener la memoria compartida
+    key_t key = ftok("memoria_compartida", 65);
+    int shmid = shmget(key, MEM_SIZE, 0666);
+    if (shmid == -1) {
+        perror("shmget");
         exit(EXIT_FAILURE);
     }
 
-    printf("Finalización de memoria completa. Memoria compartida eliminada.\n");
+    // Adjuntar la memoria compartida
+    int *memory = (int *)shmat(shmid, NULL, 0);
+    if (memory == (void *)-1) {
+        perror("shmat");
+        exit(EXIT_FAILURE);
+    }
+
+    // Liberar recursos
+    if (shmctl(shmid, IPC_RMID, NULL) == -1) {
+        perror("shmctl");
+        exit(EXIT_FAILURE);
+    }
+    printf("Recursos liberados\n");
+
+    // Matar todos los procesos en ejecución
+    // (Aquí iría la lógica para matar los procesos, pero no está implementada en este ejemplo)
+
+    // Cerrar el archivo de bitácora
+    // (Aquí iría la lógica para cerrar el archivo de bitácora, pero no está implementada en este ejemplo)
 
     return 0;
 }
