@@ -2,38 +2,31 @@
 #include <stdlib.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <unistd.h> // Agregado para getpid()
+
+#include "./heads/cons.h"
 
 int main() {
-    int num_lines;  // Variable para almacenar la cantidad de líneas o espacios de memoria
-
-    // Solicitar al usuario la cantidad de líneas o espacios de memoria
+    int num_lineas;
     printf("Ingrese la cantidad de líneas o espacios de memoria: ");
-    scanf("%d", &num_lines);
+    scanf("%d", &num_lineas);
 
-    // Solicitar memoria compartida al sistema operativo
-    int shmid = shmget(IPC_PRIVATE, num_lines * sizeof(int), IPC_CREAT | 0666);
+    // Redondear el tamaño de la memoria para que sea un múltiplo del tamaño de página
+    int mem_size = ((num_lineas * sizeof(int)) / PAGE_SIZE + 1) * PAGE_SIZE;
+    key_t key = ftok("memoria_compartida", 65); // https://www.ibm.com/docs/es/zos/3.1.0?topic=functions-ftok-generate-interprocess-communication-ipc-key
+    int shmid = shmget(key, mem_size, IPC_CREAT | 0666); // https://www.ibm.com/docs/en/zos/2.4.0?topic=functions-shmget-get-shared-memory-segment
+
     if (shmid == -1) {
-        perror("Error al solicitar memoria compartida");
+        perror("shmget");
         exit(EXIT_FAILURE);
     }
-
-    // Mapear la memoria compartida a la memoria del proceso
-    int *shared_memory = (int *)mmap(NULL, num_lines * sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, shmid, 0);
-    if (shared_memory == MAP_FAILED) {
-        perror("Error al mapear memoria compartida");
-        exit(EXIT_FAILURE);
-    }
-
-    // Inicializar la memoria compartida
-    for (int i = 0; i < num_lines; i++) {
-        shared_memory[i] = 0;  // Inicializar cada línea o espacio de memoria a 0
-    }
-
-    // Inicializar la memoria compartida
-    // Aquí podrías agregar código adicional para inicializar la memoria si fuera necesario
-
-    printf("Inicialización completa. Memoria compartida creada en %d.\n", shmid);
-
-    // El proceso finaliza después de la inicialización
-    exit(EXIT_SUCCESS);
+    
+    printf("Memoria compartida creada con ID: %d\n", shmid);
+    printf("PID: %d\n", getpid());
+    printf("Shmid: %d\n", shmid);
+    printf("Key: %d\n", key);
+    printf("Tamaño de la memoria: %d\n", mem_size);
+    printf("Número de líneas: %d\n", num_lineas);
+    printf("Tamaño de página: %d\n", PAGE_SIZE);
+    return 0;
 }
