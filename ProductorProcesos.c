@@ -12,6 +12,7 @@
 #include "./heads/strucs.h"
 #include "./heads/memManagement.h"
 #include "./heads/algorithms/worstFit.h"
+#include "./heads/algorithms/firstFit.h"
 
 void write_log(int tid, int action_type, int index, int size) {
     FILE *log_file = fopen("bitacora.txt", "a");
@@ -50,8 +51,7 @@ int getIndex(int algorithm, int *memory, int num_lines, int size) {
             index = -1;
             break;
         case 3:
-            printf("Algoritmo no implementado\n");
-            index = -1;
+            index = firstFit(memory, num_lines, size);
             break;
         default:
             printf("Algoritmo no implementado\n");
@@ -109,7 +109,7 @@ int chooseAlgorithm() {
     printf("Seleccione el algoritmo de asignación de memoria:\n");
     printf("1. Worst-Fit\n");
     printf("2. Best-Fit (Aún no implementado)\n");
-    printf("3. First-Fit (Aún no implementado)\n");
+    printf("3. First-Fit \n");
     printf("4. Salir\n");
     printf("Opción: ");
     scanf("%d", &algorithm_choice);
