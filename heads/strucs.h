@@ -2,9 +2,9 @@
 #define STRUCS_H
 
 typedef struct {
-    int tid;
-    int size;
-    int sleep;
+    int tid; // ID del hilo
+    int size; // Tamaño del hilo
+    int sleep; // Tiempo de espera del hilo
 } ThreadInfo;
 
 typedef struct {
@@ -18,6 +18,7 @@ typedef struct {
     int algorithm;    // Algoritmo de asignación de memoria
     pthread_mutex_t mutex; // Mutex para la exclusión mutua
     sem_t *memory_sem; // Semáforo para gestionar el acceso a la memoria
+    ProcessStatus process; // Estructura para almacenar el estado del proceso
 } ThreadArgs;
 
 #endif
