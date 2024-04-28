@@ -1,117 +1,183 @@
-#include <stdio.h>
-#include <stdlib.h>
+// #include <stdio.h>
+// #include <stdlib.h>
 #include <unistd.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <fcntl.h>  // Agregar esta línea
-#include <semaphore.h>
+#include <pthread.h>
+// #include <sys/ipc.h>
+// #include <sys/shm.h>
 #include <time.h>
+#include <semaphore.h>
+#include <string.h>
 
+#include "./heads/cons.h"
+#include "./heads/strucs.h"
+#include "./heads/memManagement.h"
+#include "./heads/algorithms/worstFit.h"
+#include "./heads/algorithms/firstFit.h"
 
-#define BEST_FIT 0
-#define WORST_FIT 1
-#define FIRST_FIT 2
-#define SHM_SIZE 1024  // Tamaño de la memoria compartida
+void write_log(int tid, int action_type, int index, int size) {
+    FILE *log_file = fopen("bitacora.txt", "a");
+    if (log_file == NULL) {
+        perror("fopen");
+        exit(EXIT_FAILURE);
+    }
 
-// Función para simular el tiempo de ejecución de un proceso
-void simular_tiempo(int tiempo) {
-    sleep(tiempo);
+    switch (action_type) {
+        case 0:
+            fprintf(log_file, "Hilo %d: No hay suficiente espacio en la memoria\n", tid);
+            break;
+        case 1:
+            fprintf(log_file, "Hilo %d: Asignado a partir de la línea %d con tamaño %d\n", tid, index, size);
+            break;
+        case -1:
+            fprintf(log_file, "Hilo %d: Liberado a partir de la línea %d con tamaño %d\n", tid, index, size);
+            break;
+        default:
+            fprintf(log_file, "Hilo %d: Acción desconocida\n", tid);
+            break;
+    }
+
+    // print_memory_status(memory, 65);
+    fclose(log_file);
+}
+
+int getIndex(int algorithm, int *memory, int num_lines, int size) {
+    int index;
+    switch (algorithm) {
+        case 1:
+            index = worstFit(memory, num_lines, size);
+            break;
+        case 2:
+            printf("Algoritmo no implementado\n");
+            index = -1;
+            break;
+        case 3:
+            index = firstFit(memory, num_lines, size);
+            break;
+        default:
+            printf("Algoritmo no implementado\n");
+            index = -1;
+            break;
+    }
+
+    return index;
+}
+
+void *threadFunction(void *args) {
+    ThreadArgs *thread_args = (ThreadArgs *) args;
+    int *memory = thread_args->memory;
+    int num_lines = thread_args->num_lines;
+    pthread_mutex_t *mutex = &(thread_args->mutex);
+    sem_t *memory_sem = thread_args->memory_sem;
+    int tid = pthread_self();
+    int size = (rand() % (MAX_SIZE - MIN_SIZE + 1)) + MIN_SIZE;
+    int sleep_time = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
+    ProcessStatus process = thread_args->process;
+    sem_wait(memory_sem); // Pedir semáforo de memoria
+    pthread_mutex_lock(mutex); // Bloquear el mutex antes de acceder a la memoria
+    int index = getIndex(thread_args->algorithm, memory, num_lines, size);
+
+    if (index != -1) {
+        write_log(tid, 1, index, size); // Escribir en Bitácora (asignación)
+        printf("Hilo %d asignado a partir de la línea %d con tamaño %d\n (proceso %d)", tid, index, size, process.pid);
+        // Asignar memoria para el hilo
+        for (int i = index; i < index + size; i++) {
+            memory[i] = tid;
+        }
+    } else {
+        write_log(tid, 0, -1, -1); // Escribir en Bitácora (no hay suficiente espacio)
+        printf("No hay suficiente espacio en la memoria para el hilo %d\n", tid);
+    }
+    pthread_mutex_unlock(mutex);
+    sem_post(memory_sem);
+    sleep(sleep_time);
+
+    sem_wait(memory_sem);
+    pthread_mutex_lock(mutex);
+    // Liberar memoria
+    for (int i = index; i < index + size; i++) {
+        memory[i] = 0;
+    }
+
+    pthread_mutex_unlock(mutex);
+    write_log(tid, -1, index, size); // Escribir en Bitácora (liberación)
+    sem_post(memory_sem); // Devolver semáforo de memoria
+    pthread_exit(NULL);
+}
+
+int chooseAlgorithm() {
+    int algorithm_choice;
+    printf("Seleccione el algoritmo de asignación de memoria:\n");
+    printf("1. Worst-Fit\n");
+    printf("2. Best-Fit (Aún no implementado)\n");
+    printf("3. First-Fit \n");
+    printf("4. Salir\n");
+    printf("Opción: ");
+    scanf("%d", &algorithm_choice);
+
+    if (algorithm_choice < 1 || algorithm_choice > 4) {
+        printf("Opción no válida\n");
+        exit(EXIT_FAILURE);
+    } else if (algorithm_choice == 4) {
+        printf("Saliendo...\n");
+        exit(EXIT_SUCCESS);
+    }
+    
+    return algorithm_choice;
 }
 
 int main() {
-    // Crear semáforo para controlar el acceso exclusivo al algoritmo de búsqueda de espacio
-    sem_t *mutex;
-    mutex = sem_open("/mutex", O_CREAT, 0666, 1);  // Aquí se usa O_CREAT
-    if (mutex == SEM_FAILED) {
-        perror("Error al crear semáforo");
-        exit(EXIT_FAILURE);
-    }
-
-    // Solicitar tipo de algoritmo de asignación de memoria
-    char algoritmo[20];
-    printf("Ingrese el tipo de algoritmo de asignación de memoria (Best-Fit, First-Fit, Worst-Fit): ");
-    scanf("%s", algoritmo);
-
-    // Obtener identificador de la memoria compartida
-    int shmid = shmget(IPC_PRIVATE, SHM_SIZE, IPC_CREAT | 0666);
-    if (shmid == -1) {
-        perror("Error al solicitar memoria compartida");
-        exit(EXIT_FAILURE);
-    }
-
-    // Adjuntar la memoria compartida al espacio de direcciones del proceso
-    int *memoria = (int *)shmat(shmid, NULL, 0);
-    if (memoria == (int *)-1) {
-        perror("Error al adjuntar la memoria compartida");
-        exit(EXIT_FAILURE);
-    }
-
-    // Generar procesos de manera aleatoria
     srand(time(NULL));
-    int proceso_id = 1;
+    int* memory = getMemory("memoria_compartida", 65, MEM_SIZE, 0666);
+    
+    if (memory == (void *)-1) { // (void *)-1 es el valor de retorno de shmat en caso de error
+        perror("shmat");
+        exit(EXIT_FAILURE);
+    }
+
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    sem_t *memory_sem = (sem_t *)malloc(sizeof(sem_t));
+    sem_init(memory_sem, 0, 1); // Se inicializa el semáforo de memoria en 1
+    int algorithm = chooseAlgorithm();
+
+    int customPID  = 1;
+    int sleepTime;
     while (1) {
-        // Simular un tiempo aleatorio para generar el próximo proceso
-        int tiempo_creacion = rand() % 31 + 30;  // Entre 30 y 60 segundos
-        sleep(tiempo_creacion);
+        // customPID++;
+        printf("Creando un nuevo hilo...\n");
+        pthread_t thread;
+        ThreadArgs thread_args;
+        ProcessStatus process;
+        process.pid = customPID++;
+        process.status = 0;
 
-        // Generar tamaño aleatorio para el proceso
-        int tamano_proceso = rand() % 10 + 1;  // Entre 1 y 10 líneas de memoria
-
-        // Buscar espacio en la memoria compartida para el proceso
-        sem_wait(mutex);  // Iniciar región crítica
-        int espacio_disponible = 0;
-        for (int i = 0; i < SHM_SIZE; ++i) {
-            if (memoria[i] == 0) {  // Espacio vacío
-                espacio_disponible++;
-                if (espacio_disponible == tamano_proceso) {
-                    // Asignar espacio en la memoria para el proceso
-                    for (int j = i - tamano_proceso + 1; j <= i; ++j) {
-                        memoria[j] = proceso_id;
-                    }
-                    printf("Proceso %d asignado a memoria.\n", proceso_id);
-                    break;
-                }
-            } else {
-                espacio_disponible = 0;  // Reiniciar contador
-            }
+        thread_args.memory = memory;
+        // thread_args.num_lines = MEM_SIZE / sizeof(int);
+        // Número de líneas de memoria (aleatorio)
+        thread_args.num_lines = (rand() % (MEM_SIZE / sizeof(int) - 1)) + 1;
+        thread_args.algorithm = algorithm;
+        thread_args.mutex = mutex;
+        thread_args.memory_sem = memory_sem;
+        thread_args.process = process;
+        
+        if (pthread_create(&thread, NULL, threadFunction, (void *)&thread_args) != 0) {
+            perror("pthread_create");
+            break;
         }
-        sem_post(mutex);  // Finalizar región crítica
-
-        if (espacio_disponible < tamano_proceso) {
-            printf("No hay suficiente espacio en la memoria para el proceso %d. Muriendo...\n", proceso_id);
-            break;  // Si no hay suficiente espacio, terminar el programa
-        }
-
-        // Simular tiempo de ejecución del proceso
-        int tiempo_ejecucion = rand() % 41 + 20;  // Entre 20 y 60 segundos
-        simular_tiempo(tiempo_ejecucion);
-
-        // Liberar espacio en la memoria compartida
-        sem_wait(mutex);  // Iniciar región crítica
-        for (int i = 0; i < SHM_SIZE; ++i) {
-            if (memoria[i] == proceso_id) {
-                memoria[i] = 0;  // Liberar espacio
-            }
-        }
-        sem_post(mutex);  // Finalizar región crítica
-
-        proceso_id++;
+        
+        sleepTime = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
+        printf("Esperando %d segundos para crear otro hilo...\n", sleepTime);
+        // sleep(1);
     }
 
-    // Liberar la memoria compartida
-    if (shmdt(memoria) == -1) {
-        perror("Error al liberar la memoria compartida");
+    // Desasociar la memoria compartida
+    if (shmdt(memory) == -1) {
+        perror("shmdt");
         exit(EXIT_FAILURE);
     }
 
-    // Eliminar el semáforo
-    if (sem_close(mutex) == -1) {
-        perror("Error al cerrar el semáforo");
-        exit(EXIT_FAILURE);
-    }
-
-    // Informar la finalización del programa
-    printf("Programa Productor de Procesos terminado.\n");
+    // Destruir el semáforo de memoria
+    sem_destroy(memory_sem);
+    free(memory_sem);
 
     return 0;
 }
