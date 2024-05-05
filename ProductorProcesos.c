@@ -5,7 +5,6 @@
 // #include <sys/ipc.h>
 // #include <sys/shm.h>
 #include <time.h>
-#include <semaphore.h>
 #include <string.h>
 
 #include "./heads/cons.h"
@@ -62,9 +61,22 @@ int getIndex(int algorithm, int *memory, int num_lines, int size) {
     return index;
 }
 
+void changeProcessStatus(int *statesMemory, int index, int status) {
+    //states: 1 -> accediendo a memoria, 2 -> ejecutando, 0 -> bloqueado
+    if (index >= 0) {
+        statesMemory[index] = status;
+    }
+
+    // printf("Estado de la memoria:\n");
+    for (int i = 0; i < 65; i++) {
+        printf("%d\t", statesMemory[i]);
+    }
+}
+
 void *threadFunction(void *args) {
     ThreadArgs *thread_args = (ThreadArgs *) args;
     int *memory = thread_args->memory;
+    int *memory_states = thread_args->memory_states;
     int num_lines = thread_args->num_lines;
     pthread_mutex_t *mutex = &(thread_args->mutex);
     sem_t *memory_sem = thread_args->memory_sem;
@@ -76,13 +88,16 @@ void *threadFunction(void *args) {
     pthread_mutex_lock(mutex); // Bloquear el mutex antes de acceder a la memoria
     int index = getIndex(thread_args->algorithm, memory, num_lines, size);
 
+
     if (index != -1) {
+        changeProcessStatus(memory_states, index, 1); // Cambiar estado a Accediendo a memoria
         write_log(tid, 1, index, size); // Escribir en Bitácora (asignación)
-        printf("Hilo %d asignado a partir de la línea %d con tamaño %d\n (proceso %d)", tid, index, size, process.pid);
+        // printf("Hilo %d asignado a partir de la línea %d con tamaño %d (proceso %d)\n", tid, index, size, process.pid);
         // Asignar memoria para el hilo
         for (int i = index; i < index + size; i++) {
             memory[i] = tid;
         }
+        changeProcessStatus(memory_states, index, 2); // Cambiar estado a Ejecutando
     } else {
         write_log(tid, 0, -1, -1); // Escribir en Bitácora (no hay suficiente espacio)
         printf("No hay suficiente espacio en la memoria para el hilo %d\n", tid);
@@ -98,9 +113,12 @@ void *threadFunction(void *args) {
         memory[i] = 0;
     }
 
+    changeProcessStatus(memory_states, index, 0); // Cambiar estado a Bloqueado
+    // sleep(sleep_time);
     pthread_mutex_unlock(mutex);
     write_log(tid, -1, index, size); // Escribir en Bitácora (liberación)
     sem_post(memory_sem); // Devolver semáforo de memoria
+    // changeProcessStatus(memory_states, index, 0); // Cambiar estado a Bloqueado
     pthread_exit(NULL);
 }
 
@@ -128,6 +146,7 @@ int chooseAlgorithm() {
 int main() {
     srand(time(NULL));
     int* memory = getMemory("memoria_compartida", 65, MEM_SIZE, 0666);
+    int* statesMemory = getMemory("estados_memoria_compartida", 65, MEM_SIZE, 0666);
     
     if (memory == (void *)-1) { // (void *)-1 es el valor de retorno de shmat en caso de error
         perror("shmat");
@@ -141,7 +160,7 @@ int main() {
 
     int customPID  = 1;
     int sleepTime;
-    while (1) {
+    while (customPID == 1) {
         // customPID++;
         printf("Creando un nuevo hilo...\n");
         pthread_t thread;
@@ -157,16 +176,18 @@ int main() {
         thread_args.algorithm = algorithm;
         thread_args.mutex = mutex;
         thread_args.memory_sem = memory_sem;
+        thread_args.memory_states = statesMemory;
         thread_args.process = process;
         
         if (pthread_create(&thread, NULL, threadFunction, (void *)&thread_args) != 0) {
             perror("pthread_create");
             break;
         }
+
         
         sleepTime = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
         printf("Esperando %d segundos para crear otro hilo...\n", sleepTime);
-        // sleep(1);
+        sleep(2);
     }
 
     // Desasociar la memoria compartida
