@@ -12,43 +12,37 @@
 
 #include "./heads/cons.h"
 #include "./heads/strucs.h"
+#include "./heads/memManagement.h"
 
-char* print_memory_status(int *memory, int *statesMemory, int num_lines) {
-    char* report = (char*)malloc(1024);
-    if (report == NULL) {
-        printf("Error: Memory allocation failed\n");
-        return NULL;
-    }
-
+void print_memory_status(int *memory, int *statesMemory, int num_lines) {
     int prevProcess;
+    int stateIndex = 0;
     printf("Estado de la memoria:\n");
     for (int i = 0; i < num_lines; i++) {
         if (memory[i] != 0) {
             printf("Línea %d: Ocupada por el proceso %d ", i, memory[i]);
             if (memory[i] != prevProcess) {
-                prevProcess = memory[i];
-                switch (statesMemory[i]) {
-                    case 0:
-                        printf("(Bloqueado)");
-                        break;
+                prevProcess = memory[stateIndex];
+                switch (statesMemory[stateIndex]) {
                     case 1:
-                        printf("(Ejecutando)");
-                        break;
-                    case 2:
                         printf("(Accediendo a memoria)");
                         break;
+                    case 2:
+                        printf("(Ejecutando)");
+                        break;
                     default:
-                        printf("(Estado desconocido)");
+                        printf("(Bloqueado)");
                         break;
                 }
+            }
+            else {
+                stateIndex = i;
             }
             printf("\n");
         } else {
             printf("Línea %d: Libre\n", i);
         }
     }
-
-    return report;
 }
 
 
@@ -58,21 +52,21 @@ void print_process_status(int *memory, int *statesMemory, int num_lines) {
     printf("PID\tEstado\n");
     int prevProcess;
     for (int i = 0; i < num_lines; i++) {
-        if (memory[i] != prevProcess) {
+        if (memory[i] != prevProcess && memory[i] != 0) {
             prevProcess = memory[i];
             printf("%d\t", memory[i]);
             switch (statesMemory[i]) {
-                case 0:
-                    printf("No entra aca\n");
-                    break;
                 case 1:
                     printf("Accediendo a memoria\n");
                     break;
                 case 2:
                     printf("Ejecutando\n");
                     break;
-                default:
+                case 3:
                     printf("Bloqueado\n");
+                    break;
+                default:
+                    printf("Desconocido\n");
                     break;
             }
         }
@@ -81,23 +75,8 @@ void print_process_status(int *memory, int *statesMemory, int num_lines) {
 
 int main() {
     // Obtener la memoria compartida
-    key_t key = ftok("memoria_compartida", 65);
-    key_t statesSharedMemoryKey = ftok("estados_memoria_compartida", 65);
-    int shmid = shmget(key, MEM_SIZE, 0666);
-    int statesSharedMemoryId = shmget(statesSharedMemoryKey, MEM_SIZE, 0666);
-    if (shmid == -1 || statesSharedMemoryId == -1) {
-        perror("shmget");
-        exit(EXIT_FAILURE);
-    }
-
-    // Adjuntar la memoria compartida
-    int *memory = (int *)shmat(shmid, NULL, 0);
-    int *statesMemory = (int *)shmat(shmid, NULL, 0);
-
-    if (memory == (void *)-1 || statesMemory == (void *)-1) {
-        perror("shmat");
-        exit(EXIT_FAILURE);
-    }
+    int *memory = attach_memory_block("./ProductorProcesos.c", MEM_SIZE, 65);
+    int *statesMemory = attach_memory_block("./ProductorProcesos.c", MEM_SIZE, 66);
 
 
     // Interacción con el usuario

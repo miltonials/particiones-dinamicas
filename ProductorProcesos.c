@@ -66,11 +66,6 @@ void changeProcessStatus(int *statesMemory, int index, int status) {
     if (index >= 0) {
         statesMemory[index] = status;
     }
-
-    // printf("Estado de la memoria:\n");
-    for (int i = 0; i < 65; i++) {
-        printf("%d\t", statesMemory[i]);
-    }
 }
 
 void *threadFunction(void *args) {
@@ -97,6 +92,7 @@ void *threadFunction(void *args) {
         for (int i = index; i < index + size; i++) {
             memory[i] = tid;
         }
+        sleep(2);
         changeProcessStatus(memory_states, index, 2); // Cambiar estado a Ejecutando
     } else {
         write_log(tid, 0, -1, -1); // Escribir en Bitácora (no hay suficiente espacio)
@@ -109,11 +105,11 @@ void *threadFunction(void *args) {
     sem_wait(memory_sem);
     pthread_mutex_lock(mutex);
     // Liberar memoria
-    for (int i = index; i < index + size; i++) {
+    for (int i = index; i < index + size && index >= 0; i++) {
         memory[i] = 0;
     }
 
-    changeProcessStatus(memory_states, index, 0); // Cambiar estado a Bloqueado
+    changeProcessStatus(memory_states, index, 3); // Cambiar estado a Bloqueado
     // sleep(sleep_time);
     pthread_mutex_unlock(mutex);
     write_log(tid, -1, index, size); // Escribir en Bitácora (liberación)
@@ -145,11 +141,12 @@ int chooseAlgorithm() {
 
 int main() {
     srand(time(NULL));
-    int* memory = getMemory("memoria_compartida", 65, MEM_SIZE, 0666);
-    int* statesMemory = getMemory("estados_memoria_compartida", 65, MEM_SIZE, 0666);
+    int* memory = attach_memory_block("./ProductorProcesos.c", MEM_SIZE, 65);
+    int* statesMemory = attach_memory_block("./ProductorProcesos.c", MEM_SIZE, 66);
     
-    if (memory == (void *)-1) { // (void *)-1 es el valor de retorno de shmat en caso de error
+    if (memory == NULL) { // (void *)-1 es el valor de retorno de shmat en caso de error
         perror("shmat");
+        printf("Error al adjuntar la memoria compartida\n");
         exit(EXIT_FAILURE);
     }
 
@@ -160,7 +157,7 @@ int main() {
 
     int customPID  = 1;
     int sleepTime;
-    while (customPID == 1) {
+    while (true) {
         // customPID++;
         printf("Creando un nuevo hilo...\n");
         pthread_t thread;
@@ -181,13 +178,14 @@ int main() {
         
         if (pthread_create(&thread, NULL, threadFunction, (void *)&thread_args) != 0) {
             perror("pthread_create");
-            break;
+            sleep(2);
+            // break;
         }
 
         
         sleepTime = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
         printf("Esperando %d segundos para crear otro hilo...\n", sleepTime);
-        sleep(2);
+        sleep(1);
     }
 
     // Desasociar la memoria compartida
