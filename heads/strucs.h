@@ -1,6 +1,8 @@
 #ifndef STRUCS_H
 #define STRUCS_H
 
+#include <semaphore.h>
+
 typedef struct {
     int tid; // ID del hilo
     int size; // Tamaño del hilo
@@ -19,6 +21,7 @@ typedef struct {
     pthread_mutex_t mutex; // Mutex para la exclusión mutua
     sem_t *memory_sem; // Semáforo para gestionar el acceso a la memoria
     ProcessStatus process; // Estructura para almacenar el estado del proceso
+    int *memory_states; // Puntero a la memoria compartida de estados
 } ThreadArgs;
 
 #endif

@@ -5,32 +5,17 @@
 #include <sys/shm.h>
 
 #include "./heads/cons.h"
+#include "./heads/memManagement.h"
 
 int main() {
-    // Obtener la memoria compartida
-    key_t key = ftok("memoria_compartida", 65);
-    int shmid = shmget(key, MEM_SIZE, 0666);
-    if (shmid == -1) {
-        perror("shmget");
+    bool memoryDestroyed = destroy_memory_block("./ProductorProcesos.c", MEM_SIZE, 65);
+    bool statesMemoryDestroyed = destroy_memory_block("./ProductorProcesos.c", MEM_SIZE, 66);
+
+    if (!memoryDestroyed || !statesMemoryDestroyed) {
+        printf("Error: No se pudo destruir la memoria compartida\n");
         exit(EXIT_FAILURE);
     }
 
-    // Adjuntar la memoria compartida
-    int *memory = (int *)shmat(shmid, NULL, 0);
-    if (memory == (void *)-1) {
-        perror("shmat");
-        exit(EXIT_FAILURE);
-    }
-
-    // Liberar recursos
-    if (shmctl(shmid, IPC_RMID, NULL) == -1) {
-        perror("shmctl");
-        exit(EXIT_FAILURE);
-    }
-    printf("Recursos liberados\n");
-
-    // Matar todos los procesos en ejecución
-    // ...
-
+    printf("Memoria compartida destruida\n");
     return 0;
 }
