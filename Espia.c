@@ -14,6 +14,8 @@
 #include "./heads/strucs.h"
 #include "./heads/memManagement.h"
 
+// void print_memory_status(int *processMem, int *statesMemory, int num_lines);
+
 void print_memory_status(int *processMem, int *statesMemory, int num_lines) {
     int prevProcess;
     int stateIndex = 0;
@@ -21,27 +23,23 @@ void print_memory_status(int *processMem, int *statesMemory, int num_lines) {
     for (int i = 0; i < num_lines; i++) {
         if (processMem[i] != 0) {
             printf("Línea %d: Ocupada por el proceso %d ", i, processMem[i]);
+
             if (processMem[i] != prevProcess) {
-                prevProcess = processMem[stateIndex];
-                switch (statesMemory[stateIndex]) {
-                    case 1:
-                        printf("(Accediendo a memoria)");
-                        break;
-                    case 2:
-                        printf("(Ejecutando)");
-                        break;
-                    case 3:
-                        printf("(Bloqueado)");
-                        break;
-                    // default:
-                    //     printf("(Bloqueado)");
-                    //     break;
-                }
-            }
-            else {
+                prevProcess = processMem[i];
                 stateIndex = i;
             }
-            printf("\n");
+            
+            switch (statesMemory[stateIndex]) {
+                case 1:
+                    printf("(Accediendo a memoria)\n");
+                    break;
+                case 2:
+                    printf("(Ejecutando)\n");
+                    break;
+                case 3:
+                    printf("(Bloqueado)\n");
+                    break;
+            }
         } else {
             printf("Línea %d: Libre\n", i);
         }

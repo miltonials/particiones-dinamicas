@@ -70,30 +70,29 @@ void changeProcessStatus(int *statesMemory, int index, int status) {
 
 void *threadFunction(void *args) {
     ThreadArgs *thread_args = (ThreadArgs *) args;
-    int *memory = thread_args->memory;
-    int *memory_states = thread_args->memory_states;
+    int *processMem = thread_args->memory;
+    int *statesMem = thread_args->memory_states;
     int num_lines = thread_args->num_lines;
     pthread_mutex_t *mutex = &(thread_args->mutex);
     sem_t *memory_sem = thread_args->memory_sem;
     int tid = pthread_self();
     int size = (rand() % (MAX_SIZE - MIN_SIZE + 1)) + MIN_SIZE;
     int sleep_time = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
-    // ProcessStatus process = thread_args->process;
     sem_wait(memory_sem); // Pedir semáforo de memoria
     pthread_mutex_lock(mutex); // Bloquear el mutex antes de acceder a la memoria
-    int index = getIndex(thread_args->algorithm, memory, num_lines, size);
+    int index = getIndex(thread_args->algorithm, processMem, num_lines, size);
 
 
     if (index != -1) {
-        changeProcessStatus(memory_states, index, 1); // Cambiar estado a Accediendo a memoria
+        changeProcessStatus(statesMem, index, 1); // Cambiar estado a Accediendo a memoria
         write_log(tid, 1, index, size); // Escribir en Bitácora (asignación)
         // printf("Hilo %d asignado a partir de la línea %d con tamaño %d (proceso %d)\n", tid, index, size, process.pid);
         // Asignar memoria para el hilo
         for (int i = index; i < index + size; i++) {
-            memory[i] = tid;
+            processMem[i] = tid;
         }
         sleep(2);
-        changeProcessStatus(memory_states, index, 2); // Cambiar estado a Ejecutando
+        changeProcessStatus(statesMem, index, 2); // Cambiar estado a Ejecutando
     } else {
         write_log(tid, 0, -1, -1); // Escribir en Bitácora (no hay suficiente espacio)
         printf("No hay suficiente espacio en la memoria para el hilo %d\n", tid);
@@ -105,16 +104,17 @@ void *threadFunction(void *args) {
     sem_wait(memory_sem);
     pthread_mutex_lock(mutex);
     // Liberar memoria
+    changeProcessStatus(statesMem, index, 1); // Cambiar estado a Bloqueado
     for (int i = index; i < index + size && index >= 0; i++) {
-        memory[i] = 0;
+        processMem[i] = 0;
     }
 
-    changeProcessStatus(memory_states, index, 3); // Cambiar estado a Bloqueado
+    changeProcessStatus(statesMem, index, 3); // Cambiar estado a Bloqueado
     sleep(sleep_time);
+    changeProcessStatus(statesMem, index, -1); // Cambiar estado a liberado
     pthread_mutex_unlock(mutex);
     write_log(tid, -1, index, size); // Escribir en Bitácora (liberación)
     sem_post(memory_sem); // Devolver semáforo de memoria
-    // changeProcessStatus(memory_states, index, 0); // Cambiar estado a Bloqueado
     pthread_exit(NULL);
 }
 
@@ -141,10 +141,10 @@ int chooseAlgorithm() {
 
 int main() {
     srand(time(NULL));
-    int* memory = attach_memory_block("./ProductorProcesos.c", MEM_SIZE, 65);
-    int* statesMemory = attach_memory_block("./ProductorProcesos.c", MEM_SIZE, 66);
+    int* processMem = attach_memory_block("./ProductorProcesos.c", MEM_SIZE, 65);
+    int* statesMem = attach_memory_block("./ProductorProcesos.c", MEM_SIZE, 66);
     
-    if (memory == NULL || statesMemory == NULL) {
+    if (processMem == NULL || statesMem == NULL) {
         printf("Error al adjuntar la memoria compartida\n");
         exit(EXIT_FAILURE);
     }
@@ -160,12 +160,12 @@ int main() {
         pthread_t thread;
         ThreadArgs thread_args;
 
-        thread_args.memory = memory;
+        thread_args.memory = processMem;
         thread_args.num_lines = (rand() % (MEM_SIZE / sizeof(int) - 1)) + 1;
         thread_args.algorithm = algorithm;
         thread_args.mutex = mutex;
         thread_args.memory_sem = memory_sem;
-        thread_args.memory_states = statesMemory;
+        thread_args.memory_states = statesMem;
         
         if (pthread_create(&thread, NULL, threadFunction, (void *)&thread_args) != 0) {
             perror("pthread_create");
@@ -176,12 +176,6 @@ int main() {
         sleepTime = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
         printf("Esperando %d segundos para crear otro hilo...\n", sleepTime);
         sleep(1);
-    }
-
-    // Desasociar la memoria compartida
-    if (shmdt(memory) == -1) {
-        perror("shmdt");
-        exit(EXIT_FAILURE);
     }
 
     // Destruir el semáforo de memoria
