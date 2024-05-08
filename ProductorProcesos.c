@@ -78,7 +78,7 @@ void *threadFunction(void *args) {
     int tid = pthread_self();
     int size = (rand() % (MAX_SIZE - MIN_SIZE + 1)) + MIN_SIZE;
     int sleep_time = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
-    ProcessStatus process = thread_args->process;
+    // ProcessStatus process = thread_args->process;
     sem_wait(memory_sem); // Pedir semáforo de memoria
     pthread_mutex_lock(mutex); // Bloquear el mutex antes de acceder a la memoria
     int index = getIndex(thread_args->algorithm, memory, num_lines, size);
@@ -110,7 +110,7 @@ void *threadFunction(void *args) {
     }
 
     changeProcessStatus(memory_states, index, 3); // Cambiar estado a Bloqueado
-    // sleep(sleep_time);
+    sleep(sleep_time);
     pthread_mutex_unlock(mutex);
     write_log(tid, -1, index, size); // Escribir en Bitácora (liberación)
     sem_post(memory_sem); // Devolver semáforo de memoria
@@ -144,8 +144,7 @@ int main() {
     int* memory = attach_memory_block("./ProductorProcesos.c", MEM_SIZE, 65);
     int* statesMemory = attach_memory_block("./ProductorProcesos.c", MEM_SIZE, 66);
     
-    if (memory == NULL) { // (void *)-1 es el valor de retorno de shmat en caso de error
-        perror("shmat");
+    if (memory == NULL || statesMemory == NULL) {
         printf("Error al adjuntar la memoria compartida\n");
         exit(EXIT_FAILURE);
     }
@@ -153,33 +152,24 @@ int main() {
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     sem_t *memory_sem = (sem_t *)malloc(sizeof(sem_t));
     sem_init(memory_sem, 0, 1); // Se inicializa el semáforo de memoria en 1
+    
     int algorithm = chooseAlgorithm();
-
-    int customPID  = 1;
     int sleepTime;
     while (true) {
-        // customPID++;
         printf("Creando un nuevo hilo...\n");
         pthread_t thread;
         ThreadArgs thread_args;
-        ProcessStatus process;
-        process.pid = customPID++;
-        process.status = 0;
 
         thread_args.memory = memory;
-        // thread_args.num_lines = MEM_SIZE / sizeof(int);
-        // Número de líneas de memoria (aleatorio)
         thread_args.num_lines = (rand() % (MEM_SIZE / sizeof(int) - 1)) + 1;
         thread_args.algorithm = algorithm;
         thread_args.mutex = mutex;
         thread_args.memory_sem = memory_sem;
         thread_args.memory_states = statesMemory;
-        thread_args.process = process;
         
         if (pthread_create(&thread, NULL, threadFunction, (void *)&thread_args) != 0) {
             perror("pthread_create");
             sleep(2);
-            // break;
         }
 
         

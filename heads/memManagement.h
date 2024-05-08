@@ -16,7 +16,8 @@ static int get_shared_block(char *filename, int size, int id) {
     return -1;
   }
 
-  return shmget(key, size, IPC_CREAT | 0666);
+  // return shmget(key, size, IPC_CREAT | 0666);
+  return shmget(key, size, 0);
 }
 
 int* attach_memory_block(char *filename, int size, int id) {
