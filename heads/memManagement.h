@@ -20,6 +20,32 @@ static int get_shared_block(char *filename, int size, int id) {
   return shmget(key, size, 0);
 }
 
+static int getMemId(key_t key, int shmid) {
+  struct shmid_ds shmid_ds_buf;
+  int result = shmctl(shmid, IPC_STAT, &shmid_ds_buf);
+  if (result == -1) {
+      perror("shmctl");
+      exit(EXIT_FAILURE);
+  }
+  return shmid_ds_buf.shm_cpid;
+}
+
+static int getShmId(int key) {
+  key_t processMemKey = ftok("./ProductorProcesos.c", key);
+  int processMemId = shmget(processMemKey, 0, 0);
+  return processMemId;
+}
+
+static int getMemSize(key_t key, int shmid) {
+  struct shmid_ds shmid_ds_buf;
+  int result = shmctl(shmid, IPC_STAT, &shmid_ds_buf);
+  if (result == -1) {
+      perror("shmctl");
+      exit(EXIT_FAILURE);
+  }
+  return shmid_ds_buf.shm_segsz;
+}
+
 int* attach_memory_block(char *filename, int size, int id) {
   int shmid = get_shared_block(filename, size, id);
   int *result;
@@ -49,25 +75,5 @@ bool destroy_memory_block(char *filename, int size, int id) {
 
   return (shmctl(shmid, IPC_RMID, NULL) != -1);
 }
-
-int* getMemory(char* pMemoryName, int pKey, int pMemSize, int pPermissions) {
-  key_t key = ftok(pMemoryName, key);
-  int shmid = shmget(key, pMemSize, pPermissions);
-  if (shmid == -1) {
-    perror("shmget");
-    exit(EXIT_FAILURE);
-  }
-
-  // Adjuntar la memoria compartida
-  int *memory = (int *)shmat(shmid, NULL, 0); // https://www.ibm.com/docs/es/zos/3.1.0?topic=functions-shmat-attach-shared-memory-segment
-  // sirve para adjuntar un segmento de memoria compartida a un proceso
-  if (memory == (void *)-1) {
-    perror("shmat");
-    exit(EXIT_FAILURE);
-  }
-
-  return memory;
-}
-
 
 #endif

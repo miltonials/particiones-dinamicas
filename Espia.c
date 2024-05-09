@@ -74,8 +74,14 @@ void print_process_status(int *memory, int *statesMemory, int num_lines) {
     }
 }
 
+int largo(int *processMem) {
+    int x = sizeof(processMem) / sizeof(processMem[0]);
+    return x;
+}
+
 void menu(int *processMem, int *statesMem) {
     int option;
+    int memSize = largo(processMem);
     do {
         printf("Seleccione una opción:\n");
         printf("1. Estado de la memoria\n");
@@ -86,10 +92,10 @@ void menu(int *processMem, int *statesMem) {
 
         switch (option) {
             case 1:
-                print_memory_status(processMem, statesMem, MEM_SIZE / sizeof(int));
+                print_memory_status(processMem, statesMem, memSize);
                 break;
             case 2:
-                print_process_status(processMem, statesMem, MEM_SIZE / sizeof(int));
+                print_process_status(processMem, statesMem, memSize);
                 break;
             case 3:
                 printf("Saliendo del programa...\n");
@@ -102,8 +108,8 @@ void menu(int *processMem, int *statesMem) {
 }
 
 int main() {
-    int *processMem = attach_memory_block("./ProductorProcesos.c", MEM_SIZE, 65);
-    int *statesMem = attach_memory_block("./ProductorProcesos.c", MEM_SIZE, 66);
+    int *processMem = attach_memory_block("./ProductorProcesos.c", 0, 65);
+    int *statesMem = attach_memory_block("./ProductorProcesos.c", 0, 66);
 
     if (processMem == NULL || statesMem == NULL) {
         printf("Error al adjuntar la memoria compartida\n");

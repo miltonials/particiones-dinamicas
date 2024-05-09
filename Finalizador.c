@@ -7,9 +7,10 @@
 #include "./heads/cons.h"
 #include "./heads/memManagement.h"
 
+
 int main() {
-    bool memoryDestroyed = destroy_memory_block("./ProductorProcesos.c", MEM_SIZE, 65);
-    bool statesMemoryDestroyed = destroy_memory_block("./ProductorProcesos.c", MEM_SIZE, 66);
+    bool memoryDestroyed = destroy_memory_block("./ProductorProcesos.c", 0, 65);
+    bool statesMemoryDestroyed = destroy_memory_block("./ProductorProcesos.c", 0, 66);
 
     if (!memoryDestroyed || !statesMemoryDestroyed) {
         printf("Error: No se pudo destruir la memoria compartida\n");

@@ -141,8 +141,11 @@ int chooseAlgorithm() {
 
 int main() {
     srand(time(NULL));
-    int* processMem = attach_memory_block("./ProductorProcesos.c", MEM_SIZE, 65);
-    int* statesMem = attach_memory_block("./ProductorProcesos.c", MEM_SIZE, 66);
+    int* processMem = attach_memory_block("./ProductorProcesos.c", 0, 65);
+    int* statesMem = attach_memory_block("./ProductorProcesos.c", 0, 66);
+    int shmid = getShmId(65);
+    int memSize = getMemSize(65, shmid);
+    printf("Memoria compartida de tamaño %d bytes\n", memSize);
     
     if (processMem == NULL || statesMem == NULL) {
         printf("Error al adjuntar la memoria compartida\n");
@@ -161,7 +164,7 @@ int main() {
         ThreadArgs thread_args;
 
         thread_args.memory = processMem;
-        thread_args.num_lines = (rand() % (MEM_SIZE / sizeof(int) - 1)) + 1;
+        thread_args.num_lines = (rand() % (memSize / sizeof(int) - 1)) + 1;
         thread_args.algorithm = algorithm;
         thread_args.mutex = mutex;
         thread_args.memory_sem = memory_sem;
