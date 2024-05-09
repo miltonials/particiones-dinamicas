@@ -74,14 +74,9 @@ void print_process_status(int *memory, int *statesMemory, int num_lines) {
     }
 }
 
-int largo(int *processMem) {
-    int x = sizeof(processMem) / sizeof(processMem[0]);
-    return x;
-}
-
 void menu(int *processMem, int *statesMem) {
     int option;
-    int memSize = largo(processMem);
+    int memSize = getMemSize(65, getShmId(65));// / sizeof(int);
     do {
         printf("Seleccione una opción:\n");
         printf("1. Estado de la memoria\n");
