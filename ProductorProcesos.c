@@ -86,7 +86,7 @@ Descripción: Cambia el estado de un proceso
     * @param status: Estado del proceso
 */
 void changeProcessStatus(int *statesMemory, int index, int status) {
-    //states: 1 -> accediendo a memoria, 2 -> ejecutando, 0 -> bloqueado
+    //states: 0 -> libre, 1 -> accediendo a memoria, 2 -> ejecutando, 3 -> bloqueado
     if (index >= 0) {
         statesMemory[index] = status;
     }
@@ -107,6 +107,9 @@ void *threadFunction(void *args) {
     int tid = pthread_self();
     int* processMem = attach_memory_block("./ProductorProcesos.c", 0, 65);
     int* statesMem = attach_memory_block("./ProductorProcesos.c", 0, 66);
+
+    printf("Creando proceso con tamaño: %d\n", thread_args->num_lines);
+
     sem_wait(memory_sem); // Pedir semáforo de memoria
     pthread_mutex_lock(mutex); // Bloquear el mutex antes de acceder a la memoria
 
@@ -115,14 +118,14 @@ void *threadFunction(void *args) {
         exit(EXIT_FAILURE);
     }
 
-    int index = getIndex(thread_args->algorithm, processMem, thread_args->num_lines, thread_args->mem_size);
+    int index = getIndex(thread_args->algorithm, processMem, thread_args->mem_size / sizeof(int), 1);
 
     if (index != -1) {
         changeProcessStatus(statesMem, index, 1); // Estado = accediendo a memoria
         write_log(tid, 1, index, thread_args->mem_size); // Escribir en Bitácora (asignación)
-        printf("Proceso %d asignado a partir de la línea %d con tamaño\n", tid, index);
+        printf("Proceso %d asignado a partir de la línea %d con tamaño %d\n", tid, index, thread_args->num_lines);
         // Se asigna la memoria para el proceso
-        for (int i = index; i < index + thread_args->mem_size; i++) {
+        for (int i = index; i < index + thread_args->num_lines; i++) {
             processMem[i] = tid;
         }
         sleep(5); //sleep de 5s para que se pueda ver en el programa espía cuando esté accediendo a memoria :)
@@ -139,19 +142,21 @@ void *threadFunction(void *args) {
     sem_post(memory_sem);
     sleep(thread_args->sleep_time); // simula ejecución
 
-    changeProcessStatus(statesMem, index, 1); // Estado = bloqueado, porque si alguien tiene el semáforo, entonces no puede continuar.
+    // changeProcessStatus(statesMem, index, 3); // Estado = bloqueado, porque si alguien tiene el semáforo, entonces no puede continuar.
     sem_wait(memory_sem);
     pthread_mutex_lock(mutex);
-    
-    for (int i = index; i < index + thread_args->mem_size && index >= 0; i++) {
+    changeProcessStatus(statesMem, index, 1); // Estado = accediendo a memoria
+    for (int i = index; i < index + thread_args->num_lines; i++) {
         processMem[i] = 0;
     }
+    sleep(5);
 
-    changeProcessStatus(statesMem, index, 0);
-    // changeProcessStatus(statesMem, index, -1); // Cambiar estado a liberado
-    pthread_mutex_unlock(mutex);
     write_log(tid, -1, index, thread_args->mem_size); // Escribir en Bitácora (liberación)
+    changeProcessStatus(statesMem, index, 3);
+    pthread_mutex_unlock(mutex);
     sem_post(memory_sem); // Devolver semáforo de memoria
+    
+    // changeProcessStatus(statesMem, index, 0);
     pthread_exit(NULL);
 }
 
@@ -201,7 +206,7 @@ int main() {
         pthread_t thread;
         ThreadArgs thread_args;
 
-        thread_args.num_lines = ((rand() % (memSize / sizeof(int) - 1)) + 1);
+        thread_args.num_lines = ((rand() % (MAX_SIZE -  MIN_SIZE + 1)) + MIN_SIZE);
         thread_args.sleep_time = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
         thread_args.algorithm = algorithm;
         thread_args.mutex = mutex;

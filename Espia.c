@@ -38,14 +38,16 @@ void print_memory_status(int *processMem, int *statesMemory, int num_lines) {
             
             switch (statesMemory[stateIndex]) {
                 case 1:
-                    printf("(Accediendo a memoria)\n");
+                    printf("(Accediendo a memoria) -> %d\n", statesMemory[stateIndex]);
                     break;
                 case 2:
-                    printf("(Ejecutando)\n");
+                    printf("(Ejecutando) -> %d\n", statesMemory[stateIndex]);
                     break;
-                case 3:
-                    printf("(Bloqueado)\n");
+                default:
+                    printf("(Bloqueado) -> %d\n", statesMemory[stateIndex]);
                     break;
+                // default:
+                //     printf(" -> %d\n", statesMemory[stateIndex]);
             }
         } else {
             printf("Línea %d: Libre\n", i);
@@ -78,12 +80,12 @@ void print_process_status(int *memory, int *statesMemory, int num_lines) {
                 case 2:
                     printf("Ejecutando\n");
                     break;
-                case 3:
+                default:
                     printf("Bloqueado\n");
                     break;
-                default:
-                    printf("Desconocido\n");
-                    break;
+                // default:
+                //     printf("Desconocido\n");
+                //     break;
             }
         }
     }
@@ -108,7 +110,10 @@ void menu(int *processMem, int *statesMem) {
 
         switch (option) {
             case 1:
-                print_memory_status(processMem, statesMem, memSize);
+                while(true) {
+                    print_memory_status(processMem, statesMem, memSize);
+                    sleep(1);
+                }
                 break;
             case 2:
                 print_process_status(processMem, statesMem, memSize);
