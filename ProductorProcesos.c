@@ -113,8 +113,9 @@ void *threadFunction(void *args) {
     int tid = pthread_self();
     int* processMem = attach_memory_block("./ProductorProcesos.c", 0, 65);
     int* statesMem = attach_memory_block("./ProductorProcesos.c", 0, 66);
+    int pSize = thread_args->num_lines;
 
-    printf("Creando proceso con tamaño: %d\n", thread_args->num_lines);
+    printf("Creando proceso con tamaño: %d\n", pSize);
 
     sem_wait(memory_sem); // Pedir semáforo de memoria
     pthread_mutex_lock(mutex); // Bloquear el mutex antes de acceder a la memoria
@@ -128,10 +129,10 @@ void *threadFunction(void *args) {
 
     if (index != -1) {
         changeProcessStatus(statesMem, index, 1); // Estado = accediendo a memoria
-        write_log(tid, 1, index, thread_args->num_lines); // Escribir en Bitácora (asignación)
-        printf("Proceso %d asignado a partir de la línea %d con tamaño %d\n", tid, index, thread_args->num_lines);
+        write_log(tid, 1, index, pSize); // Escribir en Bitácora (asignación)
+        printf("Proceso %d asignado a partir de la línea %d con tamaño %d\n", tid, index, pSize);
         // Se asigna la memoria para el proceso
-        for (int i = index; i < index + thread_args->num_lines; i++) {
+        for (int i = index; i < index + pSize; i++) {
             processMem[i] = tid;
         }
         sleep(5); //sleep de 5s para que se pueda ver en el programa espía cuando esté accediendo a memoria :)
@@ -151,12 +152,12 @@ void *threadFunction(void *args) {
     sem_wait(memory_sem);
     pthread_mutex_lock(mutex);
     changeProcessStatus(statesMem, index, 1); // Estado = accediendo a memoria
-    for (int i = index; i < index + thread_args->num_lines; i++) {
+    for (int i = index; i < index + pSize; i++) {
         processMem[i] = 0;
     }
     sleep(5);
 
-    write_log(tid, -1, index, thread_args->num_lines); // Escribir en Bitácora (liberación)
+    write_log(tid, -1, index, pSize); // Escribir en Bitácora (liberación)
     changeProcessStatus(statesMem, index, 3);
     pthread_mutex_unlock(mutex);
     sem_post(memory_sem); // Devolver semáforo de memoria

@@ -9,32 +9,21 @@
     * @return: Índice de la primera línea del bloque asignado, o -1 si no se pudo asignar
 */
 int bestFit(int *memory, int num_lines, int size) {
-    int start = -1;       // Índice de inicio del bloque libre
-    int len = 0;          // Longitud del bloque libre
-    int min_len = num_lines;  // Longitud mínima encontrada que sea mayor o igual al tamaño solicitado
-    int index = -1;       // Índice del bloque asignado
-    int i;
-
+    int i, j, min = num_lines, index = -1, count = 0;
     for (i = 0; i < num_lines; i++) {
-        if (memory[i] == 0) { // Si la línea está vacía
-            if (start == -1) { // Comienza un nuevo bloque libre
-                start = i;
+        if (memory[i] == 0) {
+            count++;
+            if (count == size) {
+                if (count < min) {
+                    min = count;
+                    index = i - count + 1;
+                }
             }
-            len++; // Incrementar la longitud del bloque libre
-        } else { // Si la línea está ocupada
-            if (len >= size && len < min_len) { // Si el bloque libre es lo suficientemente grande y menor que la longitud mínima actual
-                min_len = len;
-                index = start; // Asignar el bloque
-            }
-            start = -1; // Restablecer el índice de inicio
-            len = 0;    // Restablecer la longitud
+        } else {
+            count = 0;
         }
     }
-    if (len >= size && len < min_len) { // Comprobar el último bloque libre
-        index = start;
-    }
-
-    return index; // Devolver el índice del bloque asignado
+    return index;
 
 }
 #endif
