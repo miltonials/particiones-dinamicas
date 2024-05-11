@@ -24,6 +24,9 @@ Descripción: Escribe en la bitácora las acciones realizadas por los hilos
 */
 void write_log(int tid, int action_type, int index, int size) {
     FILE *log_file = fopen("bitacora.txt", "a");
+    time_t now;
+    time(&now);
+
     if (log_file == NULL) {
         perror("fopen");
         exit(EXIT_FAILURE);
@@ -31,18 +34,21 @@ void write_log(int tid, int action_type, int index, int size) {
 
     switch (action_type) {
         case 0:
-            fprintf(log_file, "Hilo %d: No hay suficiente espacio en la memoria\n", tid);
+            fprintf(log_file, "* Proceso %d: No hay suficiente espacio en la memoria", tid);
             break;
         case 1:
-            fprintf(log_file, "Hilo %d: Asignado a partir de la línea %d con tamaño %d\n", tid, index, size);
+            fprintf(log_file, "+ Proceso %d: Asignado a partir de la línea %d con tamaño %d", tid, index, size);
             break;
         case -1:
-            fprintf(log_file, "Hilo %d: Liberado a partir de la línea %d con tamaño %d\n", tid, index, size);
+            fprintf(log_file, "- Proceso %d: Liberado a partir de la línea %d con tamaño %d", tid, index, size);
             break;
         default:
-            fprintf(log_file, "Hilo %d: Acción desconocida\n", tid);
+            fprintf(log_file, "? Proceso %d: Acción desconocida", tid);
             break;
     }
+
+    //hora
+    fprintf(log_file, " - %s", ctime(&now));
 
     // print_memory_status(memory, 65);
     fclose(log_file);
@@ -122,7 +128,7 @@ void *threadFunction(void *args) {
 
     if (index != -1) {
         changeProcessStatus(statesMem, index, 1); // Estado = accediendo a memoria
-        write_log(tid, 1, index, thread_args->mem_size); // Escribir en Bitácora (asignación)
+        write_log(tid, 1, index, thread_args->num_lines); // Escribir en Bitácora (asignación)
         printf("Proceso %d asignado a partir de la línea %d con tamaño %d\n", tid, index, thread_args->num_lines);
         // Se asigna la memoria para el proceso
         for (int i = index; i < index + thread_args->num_lines; i++) {
@@ -133,7 +139,6 @@ void *threadFunction(void *args) {
         write_log(tid, 0, -1, -1); // Escribir en Bitácora (no hay suficiente espacio)
         printf("No hay suficiente espacio en la memoria para el hilo %d\n", tid);
         pthread_mutex_unlock(mutex);
-        write_log(tid, -1, index, thread_args->mem_size); // Escribir en Bitácora (liberación)
         sem_post(memory_sem); // Devolver semáforo de memoria
         pthread_exit(NULL);
     }
@@ -151,7 +156,7 @@ void *threadFunction(void *args) {
     }
     sleep(5);
 
-    write_log(tid, -1, index, thread_args->mem_size); // Escribir en Bitácora (liberación)
+    write_log(tid, -1, index, thread_args->num_lines); // Escribir en Bitácora (liberación)
     changeProcessStatus(statesMem, index, 3);
     pthread_mutex_unlock(mutex);
     sem_post(memory_sem); // Devolver semáforo de memoria
