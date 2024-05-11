@@ -172,18 +172,24 @@ Descripción: Muestra un menú para seleccionar el algoritmo de asignación de m
 */
 int chooseAlgorithm() {
     int algorithm_choice;
-    printf("Seleccione el algoritmo de asignación de memoria:\n");
-    printf("1. Worst-Fit\n");
-    printf("2. Best-Fit\n");
-    printf("3. First-Fit \n");
-    printf("4. Salir\n");
-    printf("Opción: ");
-    scanf("%d", &algorithm_choice);
+    
+    while(algorithm_choice < 1 || algorithm_choice > 4) {
+        printf("Seleccione el algoritmo de asignación de memoria:\n");
+        printf("1. Worst-Fit\n");
+        printf("2. Best-Fit\n");
+        printf("3. First-Fit\n");
+        printf("4. Salir\n");
+        printf("Opción: ");
+        scanf("%d", &algorithm_choice);
+        
+        if (algorithm_choice < 1 || algorithm_choice > 4) {
+            printf("********************\n");
+            printf("* Opción no válida *\n");
+            printf("********************\n");
+        }
+    }
 
-    if (algorithm_choice < 1 || algorithm_choice > 4) {
-        printf("Opción no válida\n");
-        exit(EXIT_FAILURE);
-    } else if (algorithm_choice == 4) {
+    if (algorithm_choice == 4) {
         printf("Saliendo...\n");
         exit(EXIT_SUCCESS);
     }
@@ -227,7 +233,7 @@ int main() {
         
         sleepTime = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
         printf("Esperando %d segundos para crear otro hilo...\n", sleepTime);
-        sleep(1);
+        sleep(sleepTime);
     }
 
     // Destruir el semáforo de memoria
