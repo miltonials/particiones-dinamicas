@@ -1,0 +1,74 @@
+Hilo 304817728: Asignado a partir de la línea 0 con tamaño 3
+Hilo 296425024: No hay suficiente espacio en la memoria
+Hilo 288032320: No hay suficiente espacio en la memoria
+Hilo 279639616: No hay suficiente espacio en la memoria
+Hilo 67106368: No hay suficiente espacio en la memoria
+Hilo 58713664: No hay suficiente espacio en la memoria
+Hilo 50320960: Asignado a partir de la línea 3 con tamaño 1
+Hilo 41928256: No hay suficiente espacio en la memoria
+Hilo 33535552: Asignado a partir de la línea 4 con tamaño 1
+Hilo 25142848: Asignado a partir de la línea 5 con tamaño 2
+Hilo 16750144: No hay suficiente espacio en la memoria
+Hilo -402655680: No hay suficiente espacio en la memoria
+Hilo -411048384: No hay suficiente espacio en la memoria
+Hilo -419441088: Asignado a partir de la línea 7 con tamaño 1
+Hilo -427833792: No hay suficiente espacio en la memoria
+Hilo -436226496: No hay suficiente espacio en la memoria
+Hilo -444619200: No hay suficiente espacio en la memoria
+Hilo -453011904: No hay suficiente espacio en la memoria
+Hilo -1006635456: No hay suficiente espacio en la memoria
+Hilo -1015028160: No hay suficiente espacio en la memoria
+Hilo -1023420864: No hay suficiente espacio en la memoria
+Hilo -1031813568: No hay suficiente espacio en la memoria
+Hilo -1040206272: No hay suficiente espacio en la memoria
+Hilo -1048598976: No hay suficiente espacio en la memoria
+Hilo -1056991680: No hay suficiente espacio en la memoria
+Hilo 279639616: Liberado a partir de la línea -1 con tamaño 9
+Hilo 67106368: Liberado a partir de la línea -1 con tamaño 10
+Hilo -1610615232: No hay suficiente espacio en la memoria
+Hilo -1619007936: No hay suficiente espacio en la memoria
+Hilo -1627400640: No hay suficiente espacio en la memoria
+Hilo -1635793344: No hay suficiente espacio en la memoria
+Hilo -1644186048: No hay suficiente espacio en la memoria
+Hilo -1652578752: No hay suficiente espacio en la memoria
+Hilo -1660971456: No hay suficiente espacio en la memoria
+Hilo -1669364160: No hay suficiente espacio en la memoria
+Hilo -1677756864: No hay suficiente espacio en la memoria
+Hilo -1686149568: No hay suficiente espacio en la memoria
+Hilo -1694542272: No hay suficiente espacio en la memoria
+Hilo -1702934976: No hay suficiente espacio en la memoria
+Hilo 41928256: Liberado a partir de la línea -1 con tamaño 5
+Hilo -1711327680: No hay suficiente espacio en la memoria
+Hilo -1719720384: No hay suficiente espacio en la memoria
+Hilo -1728113088: No hay suficiente espacio en la memoria
+Hilo 288032320: Liberado a partir de la línea -1 con tamaño 9
+Hilo -453011904: Liberado a partir de la línea -1 con tamaño 4
+Hilo -1736505792: No hay suficiente espacio en la memoria
+Hilo -1006635456: Liberado a partir de la línea -1 con tamaño 2
+Hilo -1744898496: No hay suficiente espacio en la memoria
+Hilo 296425024: Liberado a partir de la línea -1 con tamaño 7
+Hilo -1753291200: No hay suficiente espacio en la memoria
+Hilo -1761683904: No hay suficiente espacio en la memoria
+Hilo 16750144: Liberado a partir de la línea -1 con tamaño 1
+Hilo -1023420864: Liberado a partir de la línea -1 con tamaño 2
+Hilo -1770076608: No hay suficiente espacio en la memoria
+Hilo -1778469312: No hay suficiente espacio en la memoria
+Hilo -1056991680: Liberado a partir de la línea -1 con tamaño 1
+Hilo -427833792: Liberado a partir de la línea -1 con tamaño 2
+Hilo -1786862016: No hay suficiente espacio en la memoria
+Hilo -411048384: Liberado a partir de la línea -1 con tamaño 10
+Hilo -1795254720: No hay suficiente espacio en la memoria
+Hilo -402655680: Liberado a partir de la línea -1 con tamaño 7
+Hilo -1803647424: No hay suficiente espacio en la memoria
+Hilo -1812040128: No hay suficiente espacio en la memoria
+Hilo -1820432832: Asignado a partir de la línea 8 con tamaño 1
+Hilo -444619200: Liberado a partir de la línea -1 con tamaño 8
+Hilo -1828825536: No hay suficiente espacio en la memoria
+Hilo -1837218240: No hay suficiente espacio en la memoria
+Hilo -1015028160: Liberado a partir de la línea -1 con tamaño 9
+Hilo -1845610944: No hay suficiente espacio en la memoria
+Hilo -1854003648: No hay suficiente espacio en la memoria
+Hilo 25142848: Liberado a partir de la línea 5 con tamaño 2
+Hilo -1862396352: No hay suficiente espacio en la memoria
+Hilo -1870789056: No hay suficiente espacio en la memoria
+Hilo 58713664: Liberado a partir de la línea -1 con tamaño 9

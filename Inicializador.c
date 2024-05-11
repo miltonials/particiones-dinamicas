@@ -2,7 +2,11 @@
 #include "./heads/strucs.h"
 #include "./heads/memManagement.h"
 
-
+/*
+Nombre: main
+Descripción: Función principal del programa, se encarga de inicializar la memoria compartida
+@return: 0 si el programa se ejecutó correctamente
+*/
 int main() {
     int num_lineas;
     printf("Ingrese la cantidad de líneas o espacios de memoria: ");
