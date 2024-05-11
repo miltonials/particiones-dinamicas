@@ -69,7 +69,8 @@ static int getMemSize(key_t key, int shmid) {
   struct shmid_ds shmid_ds_buf;
   int result = shmctl(shmid, IPC_STAT, &shmid_ds_buf);
   if (result == -1) {
-      perror("shmctl");
+      printf("No se encontró el segmento de memoria compartida\n");
+      // perror("shmctl");
       exit(EXIT_FAILURE);
   }
   return shmid_ds_buf.shm_segsz;

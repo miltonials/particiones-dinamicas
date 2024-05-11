@@ -90,6 +90,9 @@ void changeProcessStatus(int *statesMemory, int index, int status) {
     if (index >= 0) {
         statesMemory[index] = status;
     }
+    else {
+        printf("Verificar el estado enviado\n\tIndex: %d\n\tStatus: %d", index, status);
+    }
 }
 
 /*
@@ -99,61 +102,55 @@ Descripción: Función que ejecuta un hilo
 */
 void *threadFunction(void *args) {
     ThreadArgs *thread_args = (ThreadArgs *) args;
-    // int *processMem = thread_args->memory;
-    // int *statesMem = thread_args->memory_states;
-    int num_lines = thread_args->num_lines;
     pthread_mutex_t *mutex = &(thread_args->mutex);
     sem_t *memory_sem = thread_args->memory_sem;
     int tid = pthread_self();
-    int size = 4;
-    int sleep_time = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
     int* processMem = attach_memory_block("./ProductorProcesos.c", 0, 65);
     int* statesMem = attach_memory_block("./ProductorProcesos.c", 0, 66);
     sem_wait(memory_sem); // Pedir semáforo de memoria
     pthread_mutex_lock(mutex); // Bloquear el mutex antes de acceder a la memoria
 
     if (processMem == NULL || statesMem == NULL) {
-        printf("Error al adjuntar la memoria compartida\n");
+        printf("No se logró obtener el segmento de memoria compartida.\n");
         exit(EXIT_FAILURE);
     }
 
-    int index = getIndex(thread_args->algorithm, processMem, num_lines, size);
+    int index = getIndex(thread_args->algorithm, processMem, thread_args->num_lines, thread_args->mem_size);
 
     if (index != -1) {
-        changeProcessStatus(statesMem, index, 1); // Cambiar estado a Accediendo a memoria
-        write_log(tid, 1, index, size); // Escribir en Bitácora (asignación)
-        // printf("Hilo %d asignado a partir de la línea %d con tamaño %d (proceso %d)\n", tid, index, size, process.pid);
-        // Asignar memoria para el hilo
-        for (int i = index; i < index + size; i++) {
+        changeProcessStatus(statesMem, index, 1); // Estado = accediendo a memoria
+        write_log(tid, 1, index, thread_args->mem_size); // Escribir en Bitácora (asignación)
+        printf("Proceso %d asignado a partir de la línea %d con tamaño\n", tid, index);
+        // Se asigna la memoria para el proceso
+        for (int i = index; i < index + thread_args->mem_size; i++) {
             processMem[i] = tid;
         }
-        // sleep(2);
-        changeProcessStatus(statesMem, index, 2); // Cambiar estado a Ejecutando
+        sleep(5); //sleep de 5s para que se pueda ver en el programa espía cuando esté accediendo a memoria :)
     } else {
         write_log(tid, 0, -1, -1); // Escribir en Bitácora (no hay suficiente espacio)
         printf("No hay suficiente espacio en la memoria para el hilo %d\n", tid);
         pthread_mutex_unlock(mutex);
-        write_log(tid, -1, index, size); // Escribir en Bitácora (liberación)
+        write_log(tid, -1, index, thread_args->mem_size); // Escribir en Bitácora (liberación)
         sem_post(memory_sem); // Devolver semáforo de memoria
         pthread_exit(NULL);
     }
+    changeProcessStatus(statesMem, index, 2); // Estado = ejecutando
     pthread_mutex_unlock(mutex);
     sem_post(memory_sem);
-    sleep(sleep_time);
+    sleep(thread_args->sleep_time); // simula ejecución
 
+    changeProcessStatus(statesMem, index, 1); // Estado = bloqueado, porque si alguien tiene el semáforo, entonces no puede continuar.
     sem_wait(memory_sem);
     pthread_mutex_lock(mutex);
-    // Liberar memoria
-    changeProcessStatus(statesMem, index, 1); // Cambiar estado a Bloqueado
-    for (int i = index; i < index + size && index >= 0; i++) {
+    
+    for (int i = index; i < index + thread_args->mem_size && index >= 0; i++) {
         processMem[i] = 0;
     }
 
-    changeProcessStatus(statesMem, index, 3); // Cambiar estado a Bloqueado
-    // sleep(sleep_time);
-    changeProcessStatus(statesMem, index, -1); // Cambiar estado a liberado
+    changeProcessStatus(statesMem, index, 0);
+    // changeProcessStatus(statesMem, index, -1); // Cambiar estado a liberado
     pthread_mutex_unlock(mutex);
-    write_log(tid, -1, index, size); // Escribir en Bitácora (liberación)
+    write_log(tid, -1, index, thread_args->mem_size); // Escribir en Bitácora (liberación)
     sem_post(memory_sem); // Devolver semáforo de memoria
     pthread_exit(NULL);
 }
@@ -205,9 +202,11 @@ int main() {
         ThreadArgs thread_args;
 
         thread_args.num_lines = ((rand() % (memSize / sizeof(int) - 1)) + 1);
+        thread_args.sleep_time = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
         thread_args.algorithm = algorithm;
         thread_args.mutex = mutex;
         thread_args.memory_sem = memory_sem;
+        thread_args.mem_size = memSize;
         
         if (pthread_create(&thread, NULL, threadFunction, (void *)&thread_args) != 0) {
             perror("pthread_create");
