@@ -198,6 +198,7 @@ Descripción: Función principal del programa
 */
 int main() {
     srand(time(NULL));
+    fclose(fopen("bitacora.txt", "w")); // para limpiar la bitácora
     int memSize = getMemSize(65, getShmId(65));
 
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
