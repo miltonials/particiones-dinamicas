@@ -8,6 +8,11 @@
 #include "./heads/memManagement.h"
 
 
+/*
+Nombre: main
+Descripción: Función principal del programa, se encarga de destruir la memoria compartida
+@return: 0 si el programa se ejecutó correctamente
+*/
 int main() {
     bool memoryDestroyed = destroy_memory_block("./ProductorProcesos.c", 0, 65);
     bool statesMemoryDestroyed = destroy_memory_block("./ProductorProcesos.c", 0, 66);

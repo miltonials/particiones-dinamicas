@@ -3,12 +3,14 @@
 
 #include <semaphore.h>
 
+// Estructura para almacenar la información de un hilo
 typedef struct {
     int tid; // ID del hilo
     int size; // Tamaño del hilo
     int sleep; // Tiempo de espera del hilo
 } ThreadInfo;
 
+// Estructura para almacenar los argumentos de un hilo
 typedef struct {
     int *memory;      // Puntero a la memoria compartida
     int num_lines;    // Número de líneas de la memoria compartida

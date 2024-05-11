@@ -14,6 +14,14 @@
 #include "./heads/algorithms/firstFit.h"
 #include "./heads/algorithms/bestFit.h"
 
+/*
+Nombre: write_log
+Descripción: Escribe en la bitácora las acciones realizadas por los hilos
+    * @param tid: ID del hilo
+    * @param action_type: Tipo de acción realizada
+    * @param index: Índice de la memoria
+    * @param size: Tamaño de la memoria
+*/
 void write_log(int tid, int action_type, int index, int size) {
     FILE *log_file = fopen("bitacora.txt", "a");
     if (log_file == NULL) {
@@ -40,6 +48,15 @@ void write_log(int tid, int action_type, int index, int size) {
     fclose(log_file);
 }
 
+/*
+Nombre: getIndex
+Descripción: Obtiene el índice de la memoria para un hilo
+    * @param algorithm: Algoritmo de asignación de memoria
+    * @param memory: Puntero a la memoria
+    * @param num_lines: Número de líneas de la memoria
+    * @param size: Tamaño del hilo
+    * @return: Índice de la memoria
+*/
 int getIndex(int algorithm, int *memory, int num_lines, int size) {
     int index;
     switch (algorithm) {
@@ -61,6 +78,13 @@ int getIndex(int algorithm, int *memory, int num_lines, int size) {
     return index;
 }
 
+/*
+Nombre: changeProcessStatus
+Descripción: Cambia el estado de un proceso
+    * @param statesMemory: Puntero a la memoria de estados
+    * @param index: Índice de la memoria
+    * @param status: Estado del proceso
+*/
 void changeProcessStatus(int *statesMemory, int index, int status) {
     //states: 1 -> accediendo a memoria, 2 -> ejecutando, 0 -> bloqueado
     if (index >= 0) {
@@ -68,6 +92,11 @@ void changeProcessStatus(int *statesMemory, int index, int status) {
     }
 }
 
+/*
+Nombre: threadFunction
+Descripción: Función que ejecuta un hilo
+    * @param args: Argumentos del hilo
+*/
 void *threadFunction(void *args) {
     ThreadArgs *thread_args = (ThreadArgs *) args;
     int *processMem = thread_args->memory;
@@ -118,6 +147,11 @@ void *threadFunction(void *args) {
     pthread_exit(NULL);
 }
 
+/*
+Nombre: chooseAlgorithm
+Descripción: Muestra un menú para seleccionar el algoritmo de asignación de memoria
+    * @return: Algoritmo seleccionado
+*/
 int chooseAlgorithm() {
     int algorithm_choice;
     printf("Seleccione el algoritmo de asignación de memoria:\n");
@@ -139,6 +173,11 @@ int chooseAlgorithm() {
     return algorithm_choice;
 }
 
+/*
+Nombre: main
+Descripción: Función principal del programa
+@return: 0 si el programa se ejecuta correctamente
+*/
 int main() {
     srand(time(NULL));
     int* processMem = attach_memory_block("./ProductorProcesos.c", 0, 65);

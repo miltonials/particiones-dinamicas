@@ -15,7 +15,14 @@
 #include "./heads/memManagement.h"
 
 // void print_memory_status(int *processMem, int *statesMemory, int num_lines);
+/*
+Nombre: print_memory_status
+Descripción: Imprime el estado de la memoria
+    * @param processMem: Puntero a la memoria de procesos
+    * @param statesMemory: Puntero a la memoria de estados
+    * @param num_lines: Número de líneas de la memoria
 
+*/
 void print_memory_status(int *processMem, int *statesMemory, int num_lines) {
     int prevProcess;
     int stateIndex = 0;
@@ -48,6 +55,14 @@ void print_memory_status(int *processMem, int *statesMemory, int num_lines) {
 
 
 // Función para imprimir el estado de los procesos
+/*
+Nombre: print_process_status
+Descripción: Imprime el estado de los procesos
+    * @param memory: Puntero a la memoria de procesos
+    * @param statesMemory: Puntero a la memoria de estados
+    * @param num_lines: Número de líneas de la memoria
+
+*/
 void print_process_status(int *memory, int *statesMemory, int num_lines) {
     printf("Estado de los procesos:\n");
     printf("PID\tEstado\n");
@@ -74,6 +89,12 @@ void print_process_status(int *memory, int *statesMemory, int num_lines) {
     }
 }
 
+/*
+Nombre: menu
+Descripción: Muestra un menú con las opciones disponibles
+    * @param processMem: Puntero a la memoria de procesos
+    * @param statesMem: Puntero a la memoria de estados
+*/
 void menu(int *processMem, int *statesMem) {
     int option;
     int memSize = getMemSize(65, getShmId(65));// / sizeof(int);
@@ -102,6 +123,11 @@ void menu(int *processMem, int *statesMem) {
     } while (option != 3);
 }
 
+/*
+Nombre: main
+Descripción: Función principal del programa
+return: 0 si el programa se ejecuta correctamente
+*/
 int main() {
     int *processMem = attach_memory_block("./ProductorProcesos.c", 0, 65);
     int *statesMem = attach_memory_block("./ProductorProcesos.c", 0, 66);
