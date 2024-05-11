@@ -1,4 +1,5 @@
 *.o
+*.oww
 .vscode
 Inicializador
 ProductorProcesos
@@ -6,4 +7,3 @@ Espia
 Finalizador
 Bitacora.txt
 commands.txt
-finalizador.

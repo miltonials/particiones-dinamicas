@@ -70,18 +70,25 @@ void changeProcessStatus(int *statesMemory, int index, int status) {
 
 void *threadFunction(void *args) {
     ThreadArgs *thread_args = (ThreadArgs *) args;
-    int *processMem = thread_args->memory;
-    int *statesMem = thread_args->memory_states;
+    // int *processMem = thread_args->memory;
+    // int *statesMem = thread_args->memory_states;
     int num_lines = thread_args->num_lines;
     pthread_mutex_t *mutex = &(thread_args->mutex);
     sem_t *memory_sem = thread_args->memory_sem;
     int tid = pthread_self();
-    int size = (rand() % (MAX_SIZE - MIN_SIZE + 1)) + MIN_SIZE;
+    int size = 4;
     int sleep_time = (rand() % (MAX_SLEEP - MIN_SLEEP + 1)) + MIN_SLEEP;
+    int* processMem = attach_memory_block("./ProductorProcesos.c", 0, 65);
+    int* statesMem = attach_memory_block("./ProductorProcesos.c", 0, 66);
     sem_wait(memory_sem); // Pedir semáforo de memoria
     pthread_mutex_lock(mutex); // Bloquear el mutex antes de acceder a la memoria
-    int index = getIndex(thread_args->algorithm, processMem, num_lines, size);
 
+    if (processMem == NULL || statesMem == NULL) {
+        printf("Error al adjuntar la memoria compartida\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int index = getIndex(thread_args->algorithm, processMem, num_lines, size);
 
     if (index != -1) {
         changeProcessStatus(statesMem, index, 1); // Cambiar estado a Accediendo a memoria
@@ -91,11 +98,15 @@ void *threadFunction(void *args) {
         for (int i = index; i < index + size; i++) {
             processMem[i] = tid;
         }
-        sleep(2);
+        // sleep(2);
         changeProcessStatus(statesMem, index, 2); // Cambiar estado a Ejecutando
     } else {
         write_log(tid, 0, -1, -1); // Escribir en Bitácora (no hay suficiente espacio)
         printf("No hay suficiente espacio en la memoria para el hilo %d\n", tid);
+        pthread_mutex_unlock(mutex);
+        write_log(tid, -1, index, size); // Escribir en Bitácora (liberación)
+        sem_post(memory_sem); // Devolver semáforo de memoria
+        pthread_exit(NULL);
     }
     pthread_mutex_unlock(mutex);
     sem_post(memory_sem);
@@ -110,7 +121,7 @@ void *threadFunction(void *args) {
     }
 
     changeProcessStatus(statesMem, index, 3); // Cambiar estado a Bloqueado
-    sleep(sleep_time);
+    // sleep(sleep_time);
     changeProcessStatus(statesMem, index, -1); // Cambiar estado a liberado
     pthread_mutex_unlock(mutex);
     write_log(tid, -1, index, size); // Escribir en Bitácora (liberación)
@@ -141,16 +152,7 @@ int chooseAlgorithm() {
 
 int main() {
     srand(time(NULL));
-    int* processMem = attach_memory_block("./ProductorProcesos.c", 0, 65);
-    int* statesMem = attach_memory_block("./ProductorProcesos.c", 0, 66);
-    int shmid = getShmId(65);
-    int memSize = getMemSize(65, shmid);
-    printf("Memoria compartida de tamaño %d bytes\n", memSize);
-    
-    if (processMem == NULL || statesMem == NULL) {
-        printf("Error al adjuntar la memoria compartida\n");
-        exit(EXIT_FAILURE);
-    }
+    int memSize = getMemSize(65, getShmId(65));
 
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     sem_t *memory_sem = (sem_t *)malloc(sizeof(sem_t));
@@ -163,12 +165,10 @@ int main() {
         pthread_t thread;
         ThreadArgs thread_args;
 
-        thread_args.memory = processMem;
-        thread_args.num_lines = (rand() % (memSize / sizeof(int) - 1)) + 1;
+        thread_args.num_lines = ((rand() % (memSize / sizeof(int) - 1)) + 1);
         thread_args.algorithm = algorithm;
         thread_args.mutex = mutex;
         thread_args.memory_sem = memory_sem;
-        thread_args.memory_states = statesMem;
         
         if (pthread_create(&thread, NULL, threadFunction, (void *)&thread_args) != 0) {
             perror("pthread_create");
