@@ -181,8 +181,14 @@ int chooseAlgorithm() {
         printf("3. First-Fit\n");
         printf("4. Salir\n");
         printf("Opción: ");
-        scanf("%d", &algorithm_choice);
-        
+        // validar que la opción sea un número entero entre 1 y 4 (inclusive)
+        if (scanf("%d", &algorithm_choice) != 1) { // Verificar si se ha leído correctamente un número entero
+            printf("********************\n");
+            printf("* Opción no válida *\n");
+            printf("********************\n");
+            while (getchar() != '\n'); // Limpiar el búfer de entrada
+            continue; // Saltar al inicio del bucle para solicitar nuevamente la entrada al usuario
+        }
         if (algorithm_choice < 1 || algorithm_choice > 4) {
             printf("********************\n");
             printf("* Opción no válida *\n");

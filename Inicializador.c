@@ -10,8 +10,11 @@ Descripción: Función principal del programa, se encarga de inicializar la memo
 int main() {
     int num_lineas;
     printf("Ingrese la cantidad de líneas o espacios de memoria: ");
-    scanf("%d", &num_lineas);
-
+    // validación de la entrada del usuario para que sea un número entero
+    while (scanf("%d", &num_lineas) != 1) {
+        printf("Por favor, ingrese un número entero: ");
+        while (getchar() != '\n');
+    }
     int mem_size = num_lineas * sizeof(int);
 
     key_t processMemKey = ftok("./ProductorProcesos.c", 65); // https://www.ibm.com/docs/es/zos/3.1.0?topic=functions-ftok-generate-interprocess-communication-ipc-key
