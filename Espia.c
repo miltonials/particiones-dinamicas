@@ -106,8 +106,12 @@ void menu(int *processMem, int *statesMem) {
         printf("2. Estado de los procesos\n");
         printf("3. Salir\n");
         printf("Opción: ");
-        scanf("%d", &option);
-
+        //validar que sea un número
+        if (scanf("%d", &option) != 1) {
+            printf("Opción inválida\n");
+            while (getchar() != '\n');
+            continue;
+        }
         switch (option) {
             case 1:
                 while(true) {
