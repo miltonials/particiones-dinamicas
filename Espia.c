@@ -114,10 +114,10 @@ void menu(int *processMem, int *statesMem) {
         }
         switch (option) {
             case 1:
-                while(true) {
+                // while(true) {
                     print_memory_status(processMem, statesMem, memSize);
-                    sleep(1);
-                }
+                    // sleep(1);
+                // }
                 break;
             case 2:
                 print_process_status(processMem, statesMem, memSize);
